@@ -1,0 +1,17 @@
+{
+  "municipio": "Aracaju",
+  "uf": "SE",
+  "populacao_total": 664908,
+  "bairros": [
+    {"nome": "Centro", "populacao_estimada": 15000},
+    {"nome": "Atalaia", "populacao_estimada": 25000},
+    {"nome": "Farolândia", "populacao_estimada": 35000},
+    {"nome": "Jardins", "populacao_estimada": 20000},
+    {"nome": "Jabotiana", "populacao_estimada": 40000},
+    {"nome": "Luzia", "populacao_estimada": 18000},
+    {"nome": "Grageru", "populacao_estimada": 12000},
+    {"nome": "Industrial", "populacao_estimada": 22000},
+    {"nome": "Coroa do Meio", "populacao_estimada": 28000},
+    {"nome": "13 de Julho", "populacao_estimada": 8000}
+  ]
+}

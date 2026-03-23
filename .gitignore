@@ -1,0 +1,32 @@
+# Environment — never commit
+.env
+
+# Documentação interna (PRD, techspec, claude settings)
+docs/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Instagram temp output
+/tmp/ig_posts.jsonl
+
+# Compiled scrapers
+scrapers/bin/
+
+# Logs
+logs/
+
+# CSV exports
+export.csv
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
