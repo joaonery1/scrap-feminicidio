@@ -10,6 +10,26 @@ import logging
 from datetime import date, datetime
 from typing import Optional
 
+# Posts que passaram pelo scraper mas são institucionais/informativos, não casos
+_NEGATIVE_TITLE = [
+    "saiba como acessar",
+    "como se inscrever",
+    "inscrições abertas",
+    "assistência financeira",
+    "programa oferta",
+    "acesse o link",
+    "palestra",
+    "capacitação",
+    "campanha de",
+    "dia internacional",
+]
+
+
+def _is_case(title: str, body: str) -> bool:
+    """Return False for institutional/informational posts that are not actual cases."""
+    text = (title + " " + body).lower()
+    return not any(kw in text for kw in _NEGATIVE_TITLE)
+
 logger = logging.getLogger(__name__)
 
 
@@ -91,6 +111,14 @@ def process_raw_records(conn) -> int:
                     (raw_id,)
                 )
             conn.commit()
+            continue
+
+        if not _is_case(title or "", body or ""):
+            logger.info("Skipping non-case record: %s", (title or "")[:80])
+            with conn.cursor() as cur:
+                cur.execute("UPDATE raw_records SET processed = TRUE WHERE id = %s", (raw_id,))
+            conn.commit()
+            skipped += 1
             continue
 
         body_trecho = (body or "")[:500]

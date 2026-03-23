@@ -55,13 +55,19 @@ def main() -> None:
         sys.exit(1)
 
     try:
-        # 3. Run cleaner
         sys.path.insert(0, os.path.dirname(__file__))
+
+        # 3. Import Instagram posts
+        from import_instagram import import_instagram  # type: ignore
+        ig_inserted = import_instagram(conn)
+        logger.info("import_instagram: %d new raw_records inserted.", ig_inserted)
+
+        # 4. Run cleaner
         from cleaner import process_raw_records  # type: ignore
         inserted = process_raw_records(conn)
         logger.info("process_raw_records: %d new casos inserted.", inserted)
 
-        # 4. Run exporter
+        # 5. Run exporter
         from exporter import export_csv  # type: ignore
         export_path = os.getenv("EXPORT_CSV_PATH", "export.csv")
         exported = export_csv(conn, output_path=export_path)
