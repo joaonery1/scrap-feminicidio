@@ -1,0 +1,40 @@
+{
+  "fonte": "Anuário Brasileiro de Segurança Pública 2025 - Fórum Brasileiro de Segurança Pública",
+  "url": "https://forumseguranca.org.br/wp-content/uploads/2025/09/anuario-2025.xlsx",
+  "uf": "SE",
+  "feminicidios_por_ano": {
+    "2023": 16,
+    "2024": 10
+  },
+  "homicidios_mulheres_por_ano": {
+    "2023": 39,
+    "2024": 23
+  },
+  "proporcao_feminicidio_pct": {
+    "2023": 41.03,
+    "2024": 43.48
+  },
+  "tentativas_feminicidio": {
+    "2023": 58,
+    "2024": 69
+  },
+  "feminicidio_seguido_suicidio_autor": {
+    "2023": null,
+    "2024": 3
+  },
+  "serie_historica_proporcao_feminicidio_pct": {
+    "2017": 9.4,
+    "2018": 43.2,
+    "2019": 44.7,
+    "2020": 33.3,
+    "2021": 47.6,
+    "2022": 51.4,
+    "2023": 41.0,
+    "2024": 43.5
+  },
+  "notas": [
+    "Feminicídio tipificado como qualificadora do homicídio pela Lei 13.104/2015",
+    "Em 2024, Lei 14.994/2024 transformou feminicídio em crime autônomo",
+    "Dados anuais consolidados por secretarias estaduais de segurança pública"
+  ]
+}
