@@ -31,11 +31,11 @@ def main() -> None:
         logger.error("psycopg2 is not installed. Run: pip install psycopg2-binary")
         sys.exit(1)
 
-    db_host = os.getenv("DB_HOST", "localhost")
-    db_port = int(os.getenv("DB_PORT", "5433"))
-    db_name = os.getenv("DB_NAME", "scrapshe")
-    db_user = os.getenv("DB_USER", "postgres")
-    db_password = os.getenv("DB_PASSWORD", "")
+    db_host = os.getenv("POSTGRES_HOST", "localhost")
+    db_port = int(os.getenv("POSTGRES_PORT", "5433"))
+    db_name = os.getenv("POSTGRES_DB", "scrapshe")
+    db_user = os.getenv("POSTGRES_USER", "scrapshe")
+    db_password = os.getenv("POSTGRES_PASSWORD", "changeme")
 
     logger.info(
         "Connecting to PostgreSQL at %s:%s, database=%s, user=%s",
@@ -56,12 +56,13 @@ def main() -> None:
 
     try:
         # 3. Run cleaner
-        from pipeline.cleaner import process_raw_records  # type: ignore
+        sys.path.insert(0, os.path.dirname(__file__))
+        from cleaner import process_raw_records  # type: ignore
         inserted = process_raw_records(conn)
         logger.info("process_raw_records: %d new casos inserted.", inserted)
 
         # 4. Run exporter
-        from pipeline.exporter import export_csv  # type: ignore
+        from exporter import export_csv  # type: ignore
         export_path = os.getenv("EXPORT_CSV_PATH", "export.csv")
         exported = export_csv(conn, output_path=export_path)
         logger.info("export_csv: %d rows written to %s.", exported, export_path)

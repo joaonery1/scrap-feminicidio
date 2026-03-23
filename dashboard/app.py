@@ -5,6 +5,7 @@ Streamlit dashboard for Feminicídio em Aracaju/SE monitor.
 """
 
 import os
+from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
@@ -12,7 +13,7 @@ import psycopg2
 import streamlit as st
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # ---------------------------------------------------------------------------
 # Neighborhood coordinates (approximate)
@@ -38,11 +39,11 @@ BAIRRO_COORDS = {
 
 def _get_connection():
     return psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=int(os.getenv("DB_PORT", "5433")),
-        dbname=os.getenv("DB_NAME", "scrapshe"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", ""),
+        host=os.getenv("POSTGRES_HOST", "localhost"),
+        port=int(os.getenv("POSTGRES_PORT", "5433")),
+        dbname=os.getenv("POSTGRES_DB", "scrapshe"),
+        user=os.getenv("POSTGRES_USER", "scrapshe"),
+        password=os.getenv("POSTGRES_PASSWORD", "changeme"),
     )
 
 
