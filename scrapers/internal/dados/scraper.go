@@ -15,13 +15,12 @@ import (
 )
 
 const (
-	// URL do CSV em dados.gov.br — pode precisar de ajuste conforme o conjunto de dados atual.
-	// Verificar em: https://dados.gov.br/dados/conjuntos-dados/violencia-contra-a-mulher
-	csvURL = "https://dados.gov.br/dados/conjuntos-dados/violencia-contra-a-mulher"
+	// CSV de feminicídio 2023 (dados.mg.gov.br via dados.gov.br)
+	csvURL = "https://dados.mg.gov.br/dataset/ab7e00b6-a8ae-4426-8809-85e23f3f6b6f/resource/d7341150-a88a-40a0-a1bf-898b29685d45/download/feminicidio_2023.csv"
 
-	sourceName   = "dadosgovbr"
-	httpTimeout  = 60 * time.Second
-	maxRetries   = 1
+	sourceName    = "dadosgovbr"
+	httpTimeout   = 60 * time.Second
+	maxRetries    = 1
 	localFallback = "data/dados_govbr_cache.csv"
 )
 
@@ -117,6 +116,7 @@ func (s *Scraper) parseAndInsert(ctx context.Context, r io.Reader) (int, error) 
 	cr := csv.NewReader(r)
 	cr.LazyQuotes = true
 	cr.TrimLeadingSpace = true
+	cr.Comma = ';'
 
 	// Lê cabeçalho
 	header, err := cr.Read()
@@ -159,18 +159,16 @@ func (s *Scraper) parseAndInsert(ctx context.Context, r io.Reader) (int, error) 
 		}
 		lineNum++
 
-		dataStr := getField(row, "data")
-		descricao := getField(row, "descricao")
-		municipio := getField(row, "municipio")
+		dataStr := getField(row, "data_fato")
+		municipio := getField(row, "municipio_fato")
+		situacao := getField(row, "tentado_consumado")
 
-		if descricao == "" && municipio == "" {
+		if municipio == "" {
 			continue
 		}
 
-		title := descricao
-		if municipio != "" {
-			title = fmt.Sprintf("%s — %s", descricao, municipio)
-		}
+		descricao := fmt.Sprintf("Feminicídio %s", strings.ToLower(situacao))
+		title := fmt.Sprintf("%s — %s", descricao, municipio)
 
 		// Gera URL sintética para garantir unicidade (sem URL real no CSV)
 		url := fmt.Sprintf("dadosgovbr:%s:%s", dataStr, strings.ReplaceAll(title, " ", "_"))
@@ -187,7 +185,7 @@ func (s *Scraper) parseAndInsert(ctx context.Context, r io.Reader) (int, error) 
 			Source:      sourceName,
 			URL:         url,
 			Title:       title,
-			Body:        descricao,
+			Body:        title,
 			PublishedAt: publishedAt,
 		}
 

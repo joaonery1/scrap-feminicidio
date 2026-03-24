@@ -13,9 +13,8 @@ import (
 )
 
 const (
-	sourceName  = "instagram"
-	outputFile  = "/tmp/ig_posts.jsonl"
-	totalTimeout = 60 * time.Second
+	sourceName   = "instagram"
+	totalTimeout = 5 * time.Minute
 )
 
 type Scraper struct {
@@ -42,10 +41,11 @@ func (s *Scraper) Run(ctx context.Context) (int, error) {
 	runCtx, cancel := context.WithTimeout(ctx, totalTimeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(runCtx, "python3", "scripts/instaloader_fetch.py", "--output", outputFile)
+	outputFile := os.TempDir() + "/ig_posts.jsonl"
+
+	cmd := exec.CommandContext(runCtx, "python3", "../scripts/instaloader_fetch.py", "--output", outputFile)
 	cmd.Env = append(os.Environ(),
-		"IG_USER="+os.Getenv("IG_USER"),
-		"IG_PASSWORD="+os.Getenv("IG_PASSWORD"),
+		"IG_SESSION_ID="+os.Getenv("IG_SESSION_ID"),
 	)
 
 	if out, err := cmd.CombinedOutput(); err != nil {

@@ -20,12 +20,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # — Scrapers Go (SSP-SE, G1, Instagram, dados.gov.br) —
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: scrapers/go.mod
+
+      - name: Rodar scrapers Go
+        working-directory: scrapers
+        run: go run ./cmd/scrapshe
+
+      # — Pipeline Python (cleaner + exporter) —
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Instalar dependências
+      - name: Instalar dependências Python
         run: pip install -r requirements.txt
 
-      - name: Executar pipeline
+      - name: Executar pipeline Python
         run: python pipeline/run.py
