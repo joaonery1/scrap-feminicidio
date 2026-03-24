@@ -32,7 +32,7 @@ def main() -> None:
         sys.exit(1)
 
     db_host = os.getenv("POSTGRES_HOST", "localhost")
-    db_port = int(os.getenv("POSTGRES_PORT", "5433"))
+    db_port = int(os.getenv("POSTGRES_PORT") or "5432")
     db_name = os.getenv("POSTGRES_DB", "scrapshe")
     db_user = os.getenv("POSTGRES_USER", "scrapshe")
     db_password = os.getenv("POSTGRES_PASSWORD", "changeme")
