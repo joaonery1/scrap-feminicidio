@@ -31,11 +31,11 @@ def main() -> None:
         logger.error("psycopg2 is not installed. Run: pip install psycopg2-binary")
         sys.exit(1)
 
-    db_host = os.getenv("POSTGRES_HOST", "localhost")
+    db_host = os.getenv("POSTGRES_HOST") or "localhost"
     db_port = int(os.getenv("POSTGRES_PORT") or "5432")
-    db_name = os.getenv("POSTGRES_DB", "scrapshe")
-    db_user = os.getenv("POSTGRES_USER", "scrapshe")
-    db_password = os.getenv("POSTGRES_PASSWORD", "changeme")
+    db_name = os.getenv("POSTGRES_DB") or "scrapshe"
+    db_user = os.getenv("POSTGRES_USER") or "scrapshe"
+    db_password = os.getenv("POSTGRES_PASSWORD") or "changeme"
 
     logger.info(
         "Connecting to PostgreSQL at %s:%s, database=%s, user=%s",
