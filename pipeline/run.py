@@ -19,7 +19,7 @@ def main() -> None:
     # 1. Load .env
     try:
         from dotenv import load_dotenv  # type: ignore
-        load_dotenv()
+        load_dotenv(override=False)
         logger.info("Loaded .env")
     except ImportError:
         logger.warning("python-dotenv not installed; relying on shell environment variables.")
