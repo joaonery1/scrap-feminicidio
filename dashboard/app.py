@@ -54,13 +54,20 @@ MUNICIPIO_COORDS = {
 # Loaders
 # ---------------------------------------------------------------------------
 
+def _cfg(key: str, default: str) -> str:
+    try:
+        return st.secrets[key]
+    except Exception:
+        return os.getenv(key) or default
+
+
 def _get_connection():
     return psycopg2.connect(
-        host=os.getenv("POSTGRES_HOST", "localhost"),
-        port=int(os.getenv("POSTGRES_PORT", "5433")),
-        dbname=os.getenv("POSTGRES_DB", "scrapshe"),
-        user=os.getenv("POSTGRES_USER", "scrapshe"),
-        password=os.getenv("POSTGRES_PASSWORD", "changeme"),
+        host=_cfg("POSTGRES_HOST", "localhost"),
+        port=int(_cfg("POSTGRES_PORT", "5432")),
+        dbname=_cfg("POSTGRES_DB", "postgres"),
+        user=_cfg("POSTGRES_USER", "postgres"),
+        password=_cfg("POSTGRES_PASSWORD", "changeme"),
     )
 
 
