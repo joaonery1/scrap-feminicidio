@@ -292,15 +292,20 @@ else:
     # Tabela
     st.subheader("📋 Incidentes")
     cols = ["published_at", "bairro", "tipo", "relacao", "title", "source", "url"]
-    st.dataframe(
-        df_inc[[c for c in cols if c in df_inc.columns]].reset_index(drop=True),
-        use_container_width=True,
-    )
+    _table_cfg = {
+        "published_at": st.column_config.DatetimeColumn("Data", format="DD/MM/YYYY"),
+        "bairro":       st.column_config.TextColumn("Município"),
+        "tipo":         st.column_config.TextColumn("Tipo"),
+        "relacao":      st.column_config.TextColumn("Relação"),
+        "title":        st.column_config.TextColumn("Título", width="large"),
+        "source":       st.column_config.TextColumn("Fonte"),
+        "url":          st.column_config.LinkColumn("Link", display_text="ver"),
+    }
+    df_show = df_inc[[c for c in cols if c in df_inc.columns]].sort_values("published_at", ascending=False).reset_index(drop=True)
+    st.dataframe(df_show, use_container_width=True, column_config=_table_cfg)
     with st.expander(f"Ver todos os {len(df)} registros coletados"):
-        st.dataframe(
-            df[[c for c in cols if c in df.columns]].reset_index(drop=True),
-            use_container_width=True,
-        )
+        df_all_show = df[[c for c in cols if c in df.columns]].sort_values("published_at", ascending=False).reset_index(drop=True)
+        st.dataframe(df_all_show, use_container_width=True, column_config=_table_cfg)
 
 st.markdown("---")
 

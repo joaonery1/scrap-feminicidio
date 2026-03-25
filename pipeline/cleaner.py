@@ -12,25 +12,21 @@ from typing import Optional
 
 from nlp import extract_bairro, classify_tipo, classify_relacao  # type: ignore
 
-# Posts que passaram pelo scraper mas são institucionais/informativos, não casos
-_NEGATIVE_TITLE = [
-    "saiba como acessar",
-    "como se inscrever",
-    "inscrições abertas",
-    "assistência financeira",
-    "programa oferta",
-    "acesse o link",
-    "palestra",
-    "capacitação",
-    "campanha de",
-    "dia internacional",
+# Palavras que confirmam um incidente real (ao menos uma deve estar presente)
+_POSITIVE_KEYWORDS = [
+    "feminicídio", "feminicidio",
+    "morta", "assassinada", "foi morta", "foi assassinada",
+    "matou", "mataram", "morreu", "esfaqueada", "baleada",
+    "tentativa de feminicídio", "tentativa de feminicidio",
+    "violência doméstica fatal", "violencia domestica fatal",
+    "corpo", "cadáver", "homicídio contra",
 ]
 
 
 def _is_case(title: str, body: str) -> bool:
-    """Return False for institutional/informational posts that are not actual cases."""
+    """Retorna True apenas se o texto contiver ao menos uma palavra de incidente real."""
     text = (title + " " + body).lower()
-    return not any(kw in text for kw in _NEGATIVE_TITLE)
+    return any(kw in text for kw in _POSITIVE_KEYWORDS)
 
 logger = logging.getLogger(__name__)
 
