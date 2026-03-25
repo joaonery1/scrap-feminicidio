@@ -68,6 +68,7 @@ def _get_connection():
         dbname=_cfg("POSTGRES_DB", "postgres"),
         user=_cfg("POSTGRES_USER", "postgres"),
         password=_cfg("POSTGRES_PASSWORD", "changeme"),
+        sslmode="require",
     )
 
 
