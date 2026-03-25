@@ -246,7 +246,37 @@ func (s *Scraper) buscarTexto(ctx context.Context, client *http.Client, sec seca
 	if len(text) < 50 {
 		return "", nil
 	}
-	return text, nil
+
+	// Extrair contexto ao redor da palavra "feminicid" em vez do início do doc.
+	// Documentos do TJ-SE têm cabeçalhos longos; o termo relevante pode estar no meio.
+	// Se a palavra não estiver no texto, o conteúdo é falso positivo — descartar.
+	excerpt := extractKeywordContext(text, "feminicid", 600)
+	if excerpt == "" {
+		return "", nil
+	}
+	return excerpt, nil
+}
+
+// extractKeywordContext retorna uma janela de ±window/2 chars ao redor
+// da primeira ocorrência de keyword (case-insensitive). Retorna "" se não encontrar.
+func extractKeywordContext(text, keyword string, window int) string {
+	lower := strings.ToLower(text)
+	idx := strings.Index(lower, strings.ToLower(keyword))
+	if idx < 0 {
+		return ""
+	}
+	half := window / 2
+	start := max(0, idx-half)
+	end := min(len(text), idx+half)
+	excerpt := strings.TrimSpace(text[start:end])
+	// Indica ao leitor que é um trecho
+	if start > 0 {
+		excerpt = "..." + excerpt
+	}
+	if end < len(text) {
+		excerpt = excerpt + "..."
+	}
+	return excerpt
 }
 
 // parseDataEdicao converte "07 de Janeiro de 2026" → *time.Time
