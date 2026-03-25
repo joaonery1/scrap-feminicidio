@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -39,6 +40,10 @@ func New(ctx context.Context, dsn string) (*DB, error) {
 			break
 		}
 	}
+
+	// PgBouncer (Supabase pooler) não suporta prepared statements entre conexões.
+	// Simple protocol desabilita o cache de prepared statements.
+	cfg.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
