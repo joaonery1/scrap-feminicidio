@@ -1,7 +1,7 @@
 """
 scripts/instaloader_fetch.py
 
-Fetches posts from an Instagram profile using session cookie,
+Fetches posts from Instagram profiles using session cookie,
 filters by feminicide-related keywords, and outputs JSONL.
 
 Usage:
@@ -22,7 +22,7 @@ _env = _root / ".env"
 if _env.exists():
     try:
         from dotenv import load_dotenv
-        load_dotenv(_env)
+        load_dotenv(_env, override=False)
     except ImportError:
         pass
 
@@ -33,54 +33,43 @@ except ImportError:
     sys.exit(1)
 
 KEYWORDS = [
-    # Explícitos
     "feminicídio", "feminicidio", "feminic1d", "feminic1dio",
     "femicídio", "femicidio",
-    # Vítima feminina
     "mulher morta", "mulher m0rta", "mulher m4t4",
     "esposa morta", "esposa m0rta",
     "companheira morta", "companheira m0rta",
     "namorada morta", "namorada m0rta",
     "mulher assassinada",
     "mulher esfaqueada", "mulher baleada",
-    # Ação contra mulher
     "mata esposa", "mata a esposa",
     "mata a companheira", "mata a namorada",
     "mata a mulher", "matou a esposa",
     "matou a companheira", "matou a mulher",
     "m4t4 esposa", "m4t4 a esposa",
-    # Leet-speak explícito de feminicídio
     "fem1n1c", "f3minicid",
 ]
 
-# Exclui posts institucionais OU sobre vítimas masculinas
 NEGATIVE_KEYWORDS = [
     "saiba como acessar", "como se inscrever", "inscrições abertas",
     "assistência financeira", "programa oferta", "acesse o link",
     "link na bio", "clique no link", "palestra", "capacitação",
     "campanha de", "dia internacional", "comemorar", "celebrar",
-    # Vítimas masculinas sem menção feminina
     "homem morto", "homem m0rto", "homem é morto",
     "jovem morto", "jovem é morto", "jovem m0rto",
     "trabalhador morto", "motoqueiro morto", "motoboy morto",
     "homem assassinado", "rapaz morto",
 ]
 
-TARGET_PROFILE = "gordinhodopovose"
-MAX_POSTS = 800
+TARGET_PROFILES = ["gordinhodopovose", "dougtvnews"]
+MAX_POSTS = 50
 
 
 def _normalize(text: str) -> str:
-    """Normalize leet-speak substitutions for matching."""
     return (
         text.lower()
-        .replace("4", "a")
-        .replace("3", "e")
-        .replace("1", "i")
-        .replace("0", "o")
-        .replace("#", "a")
-        .replace("@", "a")
-        .replace("$", "s")
+        .replace("4", "a").replace("3", "e")
+        .replace("1", "i").replace("0", "o")
+        .replace("#", "a").replace("@", "a").replace("$", "s")
     )
 
 
@@ -90,7 +79,6 @@ def is_relevant(caption: str) -> bool:
     normalized = _normalize(caption)
     if not any(_normalize(kw) in normalized for kw in KEYWORDS):
         return False
-    # Exclui posts institucionais/informativos
     if any(_normalize(nkw) in normalized for nkw in NEGATIVE_KEYWORDS):
         return False
     return True
@@ -152,6 +140,44 @@ def get_posts(session: requests.Session, user_id: str, max_posts: int):
     return posts[:max_posts]
 
 
+def fetch_profile(session: requests.Session, username: str) -> list:
+    print(f"Buscando perfil '{username}'...")
+    try:
+        user_id = get_user_id(session, username)
+        print(f"user_id: {user_id}")
+    except Exception as exc:
+        print(f"Erro ao buscar perfil '{username}': {exc}", file=sys.stderr)
+        return []
+
+    print(f"Buscando posts de '{username}'...")
+    try:
+        items = get_posts(session, user_id, MAX_POSTS)
+    except Exception as exc:
+        print(f"Erro ao buscar posts de '{username}': {exc}", file=sys.stderr)
+        return []
+
+    relevant = []
+    for item in items:
+        caption_data = item.get("caption") or {}
+        caption = caption_data.get("text", "") if isinstance(caption_data, dict) else ""
+        if not is_relevant(caption):
+            continue
+
+        taken_at = item.get("taken_at")
+        published_at = datetime.fromtimestamp(taken_at, tz=timezone.utc).isoformat() if taken_at else None
+        code = item.get("code") or item.get("shortcode", "")
+        url = f"https://www.instagram.com/p/{code}/" if code else ""
+
+        relevant.append({
+            "url": url,
+            "title": caption[:200],
+            "body": caption,
+            "published_at": published_at,
+        })
+
+    return relevant
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="/tmp/ig_posts.jsonl")
@@ -164,49 +190,22 @@ def main() -> None:
 
     session = make_session(session_id)
 
-    print(f"Buscando perfil '{TARGET_PROFILE}'...")
-    try:
-        user_id = get_user_id(session, TARGET_PROFILE)
-        print(f"user_id: {user_id}")
-    except Exception as exc:
-        print(f"Erro ao buscar perfil: {exc}", file=sys.stderr)
-        sys.exit(1)
+    all_posts = []
+    for username in TARGET_PROFILES:
+        posts = fetch_profile(session, username)
+        all_posts.extend(posts)
+        if posts:
+            print(f"{len(posts)} posts relevantes de '{username}'")
 
-    print(f"Buscando posts...")
-    try:
-        items = get_posts(session, user_id, MAX_POSTS)
-    except Exception as exc:
-        print(f"Erro ao buscar posts: {exc}", file=sys.stderr)
-        sys.exit(1)
-
-    relevant_posts = []
-    for item in items:
-        caption_data = item.get("caption") or {}
-        caption = caption_data.get("text", "") if isinstance(caption_data, dict) else ""
-        if not is_relevant(caption):
-            continue
-
-        taken_at = item.get("taken_at")
-        published_at = datetime.fromtimestamp(taken_at, tz=timezone.utc).isoformat() if taken_at else None
-        code = item.get("code") or item.get("shortcode", "")
-        url = f"https://www.instagram.com/p/{code}/" if code else ""
-
-        relevant_posts.append({
-            "url": url,
-            "title": caption[:200],
-            "body": caption,
-            "published_at": published_at,
-        })
-
-    if not relevant_posts:
-        print(f"Nenhum post relevante encontrado em {len(items)} posts verificados.")
+    if not all_posts:
+        print("Nenhum post relevante encontrado.")
         sys.exit(0)
 
     with open(args.output, "w", encoding="utf-8") as f:
-        for record in relevant_posts:
+        for record in all_posts:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
-    print(f"Wrote {len(relevant_posts)} relevant posts to {args.output}")
+    print(f"Wrote {len(all_posts)} relevant posts to {args.output}")
 
 
 if __name__ == "__main__":
