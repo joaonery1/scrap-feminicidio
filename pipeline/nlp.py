@@ -101,6 +101,17 @@ _CONTEXT_PATTERN = re.compile(
 )
 
 
+# Bairros de Aracaju que mapeiam para o município
+_BAIRROS_ARACAJU = re.compile(
+    r"\b(jabotiana|atalaia|coroa do meio|grageru|su[ií]ssa|luzia|farol[ân]dia|"
+    r"jardins|inácio barbosa|siqueira campos|pereira lobo|getúlio vargas|"
+    r"18 do forte|treze de julho|ponto novo|jardim centenário|bugio|"
+    r"porto dantas|santos dumont|aeroporto|zona norte|zona sul|zona leste|"
+    r"grande aracaju|região metropolitana de aracaju)\b",
+    re.IGNORECASE,
+)
+
+
 def _normalize(mun: str) -> str:
     if mun.lower() == "socorro":
         return "Nossa Senhora do Socorro"
@@ -113,6 +124,11 @@ _CONSUMADO = [
     "corpo", "cadáver", "homicídio", "homicida",
     "feminicídio consumado", "feminicidio consumado",
     "facadas", "tiros", "esfaqueada", "baleada",
+    "encontrada morta", "achada morta", "deixou-a morta",
+    "não resistiu", "não sobreviveu", "veio a óbito",
+    "executada", "degolada", "estrangulada", "enforcada",
+    "queimada viva", "afogada", "espancada até a morte",
+    "atirou contra", "disparou contra", "golpes fatais",
 ]
 
 _TENTATIVA = [
@@ -121,6 +137,11 @@ _TENTATIVA = [
     "preso antes", "evitou", "socorrida", "socorrido",
     "internada", "internado", "hospital", "huse",
     "fugiu", "conseguiu fugir",
+    "agredida", "espancada", "lesão corporal",
+    "ferida", "ferimentos", "facada sem gravidade",
+    "upa", "ubs", "pronto-socorro", "unidade de saúde",
+    "estado grave", "estado crítico", "sobreviveu ao ataque",
+    "ameaçada de morte", "ameaça de morte",
 ]
 
 
@@ -140,14 +161,20 @@ def classify_tipo(text: str) -> str:
 
 _RELACAO_KEYWORDS = [
     # ordem importa: mais específico primeiro
-    ("ex-companheiro",  ["ex-companheiro", "ex companheiro", "ex-parceiro", "ex parceiro"]),
-    ("ex-marido",       ["ex-marido", "ex marido", "ex-esposo", "ex esposo"]),
-    ("ex-namorado",     ["ex-namorado", "ex namorado", "ex-noivo", "ex noivo"]),
-    ("companheiro",     ["companheiro", "parceiro", "amásio"]),
-    ("marido",          ["marido", "esposo", "cônjuge"]),
-    ("namorado",        ["namorado", "noivo"]),
-    ("familiar",        ["pai", "padrasto", "irmão", "filho", "tio", "cunhado", "sogro", "primo"]),
-    ("conhecido",       ["vizinho", "amigo", "colega", "conhecido"]),
+    ("ex-companheiro",  ["ex-companheiro", "ex companheiro", "ex-parceiro", "ex parceiro",
+                         "ex-convivente", "ex convivente", "antigo companheiro", "antigo parceiro"]),
+    ("ex-marido",       ["ex-marido", "ex marido", "ex-esposo", "ex esposo",
+                         "ex-cônjuge", "ex cônjuge"]),
+    ("ex-namorado",     ["ex-namorado", "ex namorado", "ex-noivo", "ex noivo",
+                         "antigo namorado"]),
+    ("companheiro",     ["companheiro", "parceiro", "amásio", "convivente",
+                         "com quem vivia", "com quem morava"]),
+    ("marido",          ["marido", "esposo", "cônjuge", "com quem era casada"]),
+    ("namorado",        ["namorado", "noivo", "ficante"]),
+    ("familiar",        ["pai", "padrasto", "irmão", "filho", "tio", "cunhado",
+                         "sogro", "primo", "genro", "avô", "parente"]),
+    ("conhecido",       ["vizinho", "amigo", "colega", "conhecido", "frequentava",
+                         "cliente", "amigo da família"]),
 ]
 
 
@@ -178,5 +205,9 @@ def extract_bairro(text: str) -> Optional[str]:
         for mun, pattern in _MUNICIPIO_PATTERNS:
             if pattern.search(candidate):
                 return _normalize(mun)
+
+    # 3. Bairro de Aracaju mencionado → município Aracaju
+    if _BAIRROS_ARACAJU.search(text):
+        return "Aracaju"
 
     return None

@@ -57,6 +57,12 @@ def main() -> None:
     try:
         sys.path.insert(0, os.path.dirname(__file__))
 
+        # Registra início do run
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO pipeline_runs (started_at) VALUES (NOW()) RETURNING id")
+            run_id = cur.fetchone()[0]
+        conn.commit()
+
         # 3. Import Instagram posts
         from import_instagram import import_instagram  # type: ignore
         ig_inserted = import_instagram(conn)
@@ -143,8 +149,28 @@ def main() -> None:
         exported = export_csv(conn, output_path=export_path)
         logger.info("export_csv: %d rows written to %s.", exported, export_path)
 
+        # Marca run como sucesso
+        backfill_total = updated + updated_tipo + updated_relacao if 'updated' in dir() else 0
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE pipeline_runs SET finished_at=NOW(), status='success', casos_inseridos=%s, casos_backfill=%s WHERE id=%s",
+                (inserted, backfill_total, run_id)
+            )
+        conn.commit()
+
+    except Exception as exc:
+        logger.error("Pipeline error: %s", exc)
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE pipeline_runs SET finished_at=NOW(), status='error', error_msg=%s WHERE id=%s",
+                    (str(exc), run_id)
+                )
+            conn.commit()
+        except Exception:
+            pass
+        raise
     finally:
-        # 5. Close connection
         conn.close()
         logger.info("Database connection closed.")
 

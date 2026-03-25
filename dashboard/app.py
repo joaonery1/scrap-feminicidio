@@ -255,19 +255,30 @@ else:
                            color_discrete_sequence=["#c0392b", "#e74c3c", "#f1948a"])
         st.plotly_chart(fig_fonte, use_container_width=True)
 
-    # Gráfico de relação agressor-vítima
+    # Gráfico consumado vs tentativa por mês
+    if "tipo" in df_inc.columns:
+        df_tipo_mes = df_inc.copy()
+        df_tipo_mes["mes"] = df_tipo_mes["published_at"].dt.to_period("M").dt.to_timestamp()
+        tipo_mes = df_tipo_mes.groupby(["mes", "tipo"]).size().reset_index(name="casos")
+        fig_tipo = px.bar(tipo_mes, x="mes", y="casos", color="tipo", barmode="group",
+                          text="casos",
+                          labels={"mes": "Mês", "casos": "Casos", "tipo": "Tipo"},
+                          title="Consumado vs Tentativa por mês",
+                          color_discrete_map={"consumado": "#c0392b", "tentativa": "#e67e22", "desconhecido": "#95a5a6"})
+        fig_tipo.update_traces(textposition="outside")
+        st.plotly_chart(fig_tipo, use_container_width=True)
+
+    # Gráfico de relação agressor-vítima (inclui desconhecido)
     if "relacao" in df.columns:
-        df_rel = df[df["relacao"] != "desconhecido"]
-        if not df_rel.empty:
-            por_relacao = df_rel.groupby("relacao").size().reset_index(name="total").sort_values("total", ascending=True)
-            fig_rel = px.bar(por_relacao, x="total", y="relacao", orientation="h",
-                             text="total",
-                             labels={"total": "Casos", "relacao": "Relação"},
-                             title="Relação agressor-vítima",
-                             color="total", color_continuous_scale="Reds")
-            fig_rel.update_traces(textposition="outside")
-            fig_rel.update_layout(coloraxis_showscale=False)
-            st.plotly_chart(fig_rel, use_container_width=True)
+        por_relacao = df.groupby("relacao").size().reset_index(name="total").sort_values("total", ascending=True)
+        fig_rel = px.bar(por_relacao, x="total", y="relacao", orientation="h",
+                         text="total",
+                         labels={"total": "Casos", "relacao": "Relação"},
+                         title="Relação agressor-vítima",
+                         color="total", color_continuous_scale="Reds")
+        fig_rel.update_traces(textposition="outside")
+        fig_rel.update_layout(coloraxis_showscale=False)
+        st.plotly_chart(fig_rel, use_container_width=True)
 
     # Mapa
     df_cidade = df[df["bairro"].notna()].copy()
