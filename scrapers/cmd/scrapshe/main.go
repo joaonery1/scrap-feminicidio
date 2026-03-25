@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/scrapshe/scrapers/internal/dados"
 	"github.com/scrapshe/scrapers/internal/g1"
+	"github.com/scrapshe/scrapers/internal/infonet"
 	"github.com/scrapshe/scrapers/internal/instagram"
 	"github.com/scrapshe/scrapers/internal/sspse"
 	"github.com/scrapshe/scrapers/internal/storage"
@@ -39,6 +40,7 @@ func main() {
 	}{
 		{"sspse", sspse.New(db, logger.With("scraper", "sspse")).Run},
 		{"g1", g1.New(db, logger.With("scraper", "g1")).Run},
+		{"infonet", infonet.New(db, logger.With("scraper", "infonet")).Run},
 		{"instagram", instagram.New(db, logger.With("scraper", "instagram")).Run},
 		{"dadosgovbr", dados.New(db, logger.With("scraper", "dadosgovbr")).Run},
 	}
