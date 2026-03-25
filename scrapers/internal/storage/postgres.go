@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,7 +22,14 @@ type DB struct {
 }
 
 func New(ctx context.Context, dsn string) (*DB, error) {
-	pool, err := pgxpool.New(ctx, dsn)
+	cfg, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("pgxpool.ParseConfig: %w", err)
+	}
+	cfg.ConnConfig.DialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return (&net.Dialer{}).DialContext(ctx, "tcp4", addr)
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("pgxpool.New: %w", err)
 	}
