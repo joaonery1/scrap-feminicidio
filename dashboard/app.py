@@ -108,6 +108,14 @@ st.set_page_config(
 
 st.title("🔴 Feminicídio em Sergipe — Monitor 2026")
 
+st.info(
+    "**Aviso:** Os dados são coletados automaticamente de fontes públicas e podem conter "
+    "imprecisões. A classificação de tipo (consumado/tentativa) e relação agressor-vítima "
+    "é feita por análise de texto e pode ter erros. Sempre verifique a fonte original antes "
+    "de utilizar as informações.",
+    icon="ℹ️",
+)
+
 df_all = load_casos()
 anuario = load_anuario()
 

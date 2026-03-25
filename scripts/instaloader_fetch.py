@@ -61,7 +61,7 @@ NEGATIVE_KEYWORDS = [
 ]
 
 TARGET_PROFILES = ["gordinhodopovose", "dougtvnews"]
-MAX_POSTS = 50
+MAX_POSTS = 12  # só a página mais recente — reduz risco de 429
 
 
 def _normalize(text: str) -> str:
@@ -191,7 +191,9 @@ def main() -> None:
     session = make_session(session_id)
 
     all_posts = []
-    for username in TARGET_PROFILES:
+    for i, username in enumerate(TARGET_PROFILES):
+        if i > 0:
+            time.sleep(5)  # pausa entre perfis para evitar 429
         posts = fetch_profile(session, username)
         all_posts.extend(posts)
         if posts:

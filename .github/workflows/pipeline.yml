@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 */2 * * *"   # a cada 2h
   workflow_dispatch:
+    inputs:
+      skip_instagram:
+        description: "Pular Instagram (evitar 429)"
+        type: boolean
+        default: false
 
 env:
   POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
@@ -11,6 +16,7 @@ env:
   POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
   POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
   POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  # Instagram só roda no job dedicado (cron às 9h) ou quando IG_SESSION_ID está presente
   IG_SESSION_ID: ${{ secrets.IG_SESSION_ID }}
 
 jobs:
