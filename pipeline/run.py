@@ -67,6 +67,22 @@ def main() -> None:
         inserted = process_raw_records(conn)
         logger.info("process_raw_records: %d new casos inserted.", inserted)
 
+        # 4b. Backfill bairro para casos existentes sem município
+        from pipeline.nlp import extract_bairro  # type: ignore
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, title, body_trecho FROM casos WHERE bairro IS NULL")
+            rows = cur.fetchall()
+        updated = 0
+        for caso_id, title, body in rows:
+            bairro = extract_bairro((title or "") + " " + (body or ""))
+            if bairro:
+                with conn.cursor() as cur:
+                    cur.execute("UPDATE casos SET bairro = %s WHERE id = %s", (bairro, caso_id))
+                updated += 1
+        if updated:
+            conn.commit()
+            logger.info("backfill_bairro: %d casos atualizados.", updated)
+
         # 5. Run exporter
         from exporter import export_csv  # type: ignore
         export_path = os.getenv("EXPORT_CSV_PATH", "export.csv")

@@ -10,6 +10,8 @@ import logging
 from datetime import date, datetime
 from typing import Optional
 
+from pipeline.nlp import extract_bairro
+
 # Posts que passaram pelo scraper mas são institucionais/informativos, não casos
 _NEGATIVE_TITLE = [
     "saiba como acessar",
@@ -122,6 +124,7 @@ def process_raw_records(conn) -> int:
             continue
 
         body_trecho = (body or "")[:500]
+        bairro = extract_bairro((title or "") + " " + (body or ""))
 
         with conn.cursor() as cur:
             cur.execute(
@@ -131,7 +134,7 @@ def process_raw_records(conn) -> int:
                 VALUES
                     (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (raw_id, source, url, title, body_trecho, published_at_iso, None, dedup_hash)
+                (raw_id, source, url, title, body_trecho, published_at_iso, bairro, dedup_hash)
             )
             cur.execute(
                 "UPDATE raw_records SET processed = TRUE WHERE id = %s",
