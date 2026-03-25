@@ -14,6 +14,7 @@ import (
 	"github.com/scrapshe/scrapers/internal/senoticias"
 	"github.com/scrapshe/scrapers/internal/sspse"
 	"github.com/scrapshe/scrapers/internal/storage"
+	"github.com/scrapshe/scrapers/internal/tjse"
 )
 
 func main() {
@@ -43,6 +44,7 @@ func main() {
 		{"infonet", infonet.New(db, logger.With("scraper", "infonet")).Run},
 		{"senoticias", senoticias.New(db, logger.With("scraper", "senoticias")).Run},
 		{"instagram", instagram.New(db, logger.With("scraper", "instagram")).Run},
+		{"tjse", tjse.New(db, logger.With("scraper", "tjse")).Run},
 	}
 
 	for _, s := range scrapers {
