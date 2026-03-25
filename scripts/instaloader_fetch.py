@@ -197,13 +197,13 @@ def main() -> None:
         if posts:
             print(f"{len(posts)} posts relevantes de '{username}'")
 
-    if not all_posts:
-        print("Nenhum post relevante encontrado.")
-        sys.exit(0)
-
     with open(args.output, "w", encoding="utf-8") as f:
         for record in all_posts:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+    if not all_posts:
+        print("Nenhum post relevante encontrado.")
+        sys.exit(0)
 
     print(f"Wrote {len(all_posts)} relevant posts to {args.output}")
 
