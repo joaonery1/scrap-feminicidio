@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/scrapshe/scrapers/internal/storage"
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
 
 const (
@@ -124,9 +126,8 @@ func (s *Scraper) buscarSecoes(ctx context.Context, client *http.Client) ([]seca
 	if err != nil {
 		return nil, fmt.Errorf("GET pesquisar: %w", err)
 	}
-	body, _ := io.ReadAll(getResp.Body)
+	pageHTML, _ := readLatin1(getResp.Body)
 	getResp.Body.Close()
-	pageHTML := string(body)
 
 	token := extractBetween(pageHTML, `wi.token" VALUE="`, `"`)
 
@@ -155,9 +156,8 @@ func (s *Scraper) buscarSecoes(ctx context.Context, client *http.Client) ([]seca
 	if err != nil {
 		return nil, fmt.Errorf("POST pesquisar: %w", err)
 	}
-	respBody, _ := io.ReadAll(postResp.Body)
+	resultHTML, _ := readLatin1(postResp.Body)
 	postResp.Body.Close()
-	resultHTML := string(respBody)
 
 	// 3. Extrair verSecao(edicao, caderno, secao) + data + título
 	var secoes []secao
@@ -234,10 +234,10 @@ func (s *Scraper) buscarTexto(ctx context.Context, client *http.Client, sec seca
 	if err != nil {
 		return "", err
 	}
-	body, _ := io.ReadAll(resp.Body)
+	raw, _ := readLatin1(resp.Body)
 	resp.Body.Close()
 
-	text := stripHTML(string(body))
+	text := stripHTML(raw)
 	text = html.UnescapeString(text)
 	text = reSpaces.ReplaceAllString(text, " ")
 	text = strings.TrimSpace(text)
@@ -273,6 +273,16 @@ func parseDataEdicao(s string) *time.Time {
 		return nil
 	}
 	return &t
+}
+
+// readLatin1 lê o corpo da resposta e converte de ISO-8859-1 para UTF-8.
+func readLatin1(r io.Reader) (string, error) {
+	decoded := transform.NewReader(r, charmap.ISO8859_1.NewDecoder())
+	b, err := io.ReadAll(decoded)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func stripHTML(s string) string {
