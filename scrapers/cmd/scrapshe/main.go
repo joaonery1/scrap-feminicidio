@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/scrapshe/scrapers/internal/dados"
 	"github.com/scrapshe/scrapers/internal/g1"
 	"github.com/scrapshe/scrapers/internal/infonet"
 	"github.com/scrapshe/scrapers/internal/instagram"
@@ -42,7 +41,6 @@ func main() {
 		{"g1", g1.New(db, logger.With("scraper", "g1")).Run},
 		{"infonet", infonet.New(db, logger.With("scraper", "infonet")).Run},
 		{"instagram", instagram.New(db, logger.With("scraper", "instagram")).Run},
-		{"dadosgovbr", dados.New(db, logger.With("scraper", "dadosgovbr")).Run},
 	}
 
 	for _, s := range scrapers {

@@ -94,15 +94,34 @@ _MUNICIPIO_PATTERNS = [
     for mun in sorted(set(MUNICIPIOS_SE), key=len, reverse=True)
 ]
 
+# Padrões contextuais: "em Aracaju", "no município de Lagarto", etc.
+_CONTEXT_PATTERN = re.compile(
+    r"(?:em|no município de|na cidade de|interior de|cidade de)\s+([A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇÀÈÌÒÙ][a-záéíóúâêîôûãõçàèìòù]+(?:\s+[A-ZÁÉÍÓÚÂÊÎÔÛÃÕÇÀÈÌÒÙa-záéíóúâêîôûãõçàèìòù]+)*)",
+    re.IGNORECASE,
+)
+
+
+def _normalize(mun: str) -> str:
+    if mun.lower() == "socorro":
+        return "Nossa Senhora do Socorro"
+    return mun
+
 
 def extract_bairro(text: str) -> Optional[str]:
     """Extract Sergipe municipality from text. Returns canonical name or None."""
     if not text:
         return None
+
+    # 1. Busca direta pelo nome do município
     for mun, pattern in _MUNICIPIO_PATTERNS:
         if pattern.search(text):
-            # Normalize abbreviations
-            if mun == "Socorro":
-                return "Nossa Senhora do Socorro"
-            return mun
+            return _normalize(mun)
+
+    # 2. Busca contextual: "em X", "no município de X"
+    for match in _CONTEXT_PATTERN.finditer(text):
+        candidate = match.group(1).strip()
+        for mun, pattern in _MUNICIPIO_PATTERNS:
+            if pattern.search(candidate):
+                return _normalize(mun)
+
     return None

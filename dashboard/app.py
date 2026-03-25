@@ -129,7 +129,7 @@ fonte_sel  = st.sidebar.multiselect("Fonte",  fontes_disp,  default=[])
 bairro_sel = st.sidebar.multiselect("Bairro", bairros_disp, default=[])
 
 st.sidebar.markdown("---")
-st.sidebar.caption("Fontes: SSP-SE, G1 Sergipe  \nDados históricos: Anuário FBSP 2025")
+st.sidebar.caption("Fontes: SSP-SE, G1 Sergipe, Infonet  \nDados históricos: Anuário FBSP 2025")
 
 # ---------------------------------------------------------------------------
 # Apply filters

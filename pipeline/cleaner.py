@@ -10,7 +10,7 @@ import logging
 from datetime import date, datetime
 from typing import Optional
 
-from pipeline.nlp import extract_bairro
+from nlp import extract_bairro  # type: ignore
 
 # Posts que passaram pelo scraper mas são institucionais/informativos, não casos
 _NEGATIVE_TITLE = [
