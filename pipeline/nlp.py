@@ -107,6 +107,37 @@ def _normalize(mun: str) -> str:
     return mun
 
 
+_CONSUMADO = [
+    "morta", "assassinada", "foi morta", "foi assassinada",
+    "matou", "mataram", "morre", "morreu", "óbito", "vítima fatal",
+    "corpo", "cadáver", "homicídio", "homicida",
+    "feminicídio consumado", "feminicidio consumado",
+    "facadas", "tiros", "esfaqueada", "baleada",
+]
+
+_TENTATIVA = [
+    "tentativa", "tentou matar", "tentou assassinar",
+    "sobreviveu", "foi resgatada", "resgatada", "escapou",
+    "preso antes", "evitou", "socorrida", "socorrido",
+    "internada", "internado", "hospital", "huse",
+    "fugiu", "conseguiu fugir",
+]
+
+
+def classify_tipo(text: str) -> str:
+    """Classifica o caso como consumado, tentativa ou desconhecido."""
+    if not text:
+        return "desconhecido"
+    lower = text.lower()
+    is_tentativa = any(kw in lower for kw in _TENTATIVA)
+    is_consumado = any(kw in lower for kw in _CONSUMADO)
+    if is_tentativa and not is_consumado:
+        return "tentativa"
+    if is_consumado:
+        return "consumado"
+    return "desconhecido"
+
+
 def extract_bairro(text: str) -> Optional[str]:
     """Extract Sergipe municipality from text. Returns canonical name or None."""
     if not text:

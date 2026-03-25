@@ -68,7 +68,9 @@ def main() -> None:
         logger.info("process_raw_records: %d new casos inserted.", inserted)
 
         # 4b. Backfill bairro para casos existentes sem município
-        from nlp import extract_bairro  # type: ignore
+        from nlp import extract_bairro, classify_tipo  # type: ignore
+
+        # Backfill bairro
         with conn.cursor() as cur:
             cur.execute("SELECT id, title, body_trecho FROM casos WHERE bairro IS NULL")
             rows = cur.fetchall()
@@ -82,6 +84,43 @@ def main() -> None:
         if updated:
             conn.commit()
             logger.info("backfill_bairro: %d casos atualizados.", updated)
+
+        # Backfill tipo
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, title, body_trecho FROM casos WHERE tipo = 'desconhecido'")
+            rows = cur.fetchall()
+        updated_tipo = 0
+        for caso_id, title, body in rows:
+            tipo = classify_tipo((title or "") + " " + (body or ""))
+            if tipo != "desconhecido":
+                with conn.cursor() as cur:
+                    cur.execute("UPDATE casos SET tipo = %s WHERE id = %s", (tipo, caso_id))
+                updated_tipo += 1
+        if updated_tipo:
+            conn.commit()
+            logger.info("backfill_tipo: %d casos atualizados.", updated_tipo)
+
+        # Agrupamento cross-source: casos com mesma data + mesmo bairro de fontes diferentes
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE casos c
+                SET caso_grupo_id = sub.min_id
+                FROM (
+                    SELECT MIN(id) as min_id, published_at, bairro
+                    FROM casos
+                    WHERE bairro IS NOT NULL AND published_at IS NOT NULL
+                    GROUP BY published_at, bairro
+                    HAVING COUNT(DISTINCT source) > 1
+                ) sub
+                WHERE c.published_at = sub.published_at
+                  AND c.bairro = sub.bairro
+                  AND c.id != sub.min_id
+                  AND c.caso_grupo_id IS NULL
+            """)
+            agrupados = cur.rowcount
+        conn.commit()
+        if agrupados:
+            logger.info("agrupamento: %d casos vinculados a um caso principal.", agrupados)
 
         # 5. Run exporter
         from exporter import export_csv  # type: ignore
