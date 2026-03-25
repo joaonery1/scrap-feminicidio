@@ -10,7 +10,7 @@ import logging
 from datetime import date, datetime
 from typing import Optional
 
-from nlp import extract_bairro, classify_tipo  # type: ignore
+from nlp import extract_bairro, classify_tipo, classify_relacao  # type: ignore
 
 # Posts que passaram pelo scraper mas são institucionais/informativos, não casos
 _NEGATIVE_TITLE = [
@@ -127,16 +127,17 @@ def process_raw_records(conn) -> int:
         full_text = (title or "") + " " + (body or "")
         bairro = extract_bairro(full_text)
         tipo = classify_tipo(full_text)
+        relacao = classify_relacao(full_text)
 
         with conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO casos
-                    (raw_id, source, url, title, body_trecho, published_at, bairro, dedup_hash, tipo)
+                    (raw_id, source, url, title, body_trecho, published_at, bairro, dedup_hash, tipo, relacao)
                 VALUES
-                    (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (raw_id, source, url, title, body_trecho, published_at_iso, bairro, dedup_hash, tipo)
+                (raw_id, source, url, title, body_trecho, published_at_iso, bairro, dedup_hash, tipo, relacao)
             )
             cur.execute(
                 "UPDATE raw_records SET processed = TRUE WHERE id = %s",

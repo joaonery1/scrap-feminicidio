@@ -138,6 +138,30 @@ def classify_tipo(text: str) -> str:
     return "desconhecido"
 
 
+_RELACAO_KEYWORDS = [
+    # ordem importa: mais específico primeiro
+    ("ex-companheiro",  ["ex-companheiro", "ex companheiro", "ex-parceiro", "ex parceiro"]),
+    ("ex-marido",       ["ex-marido", "ex marido", "ex-esposo", "ex esposo"]),
+    ("ex-namorado",     ["ex-namorado", "ex namorado", "ex-noivo", "ex noivo"]),
+    ("companheiro",     ["companheiro", "parceiro", "amásio"]),
+    ("marido",          ["marido", "esposo", "cônjuge"]),
+    ("namorado",        ["namorado", "noivo"]),
+    ("familiar",        ["pai", "padrasto", "irmão", "filho", "tio", "cunhado", "sogro", "primo"]),
+    ("conhecido",       ["vizinho", "amigo", "colega", "conhecido"]),
+]
+
+
+def classify_relacao(text: str) -> str:
+    """Classifica a relação agressor-vítima. Retorna categoria ou 'desconhecido'."""
+    if not text:
+        return "desconhecido"
+    lower = text.lower()
+    for categoria, keywords in _RELACAO_KEYWORDS:
+        if any(kw in lower for kw in keywords):
+            return categoria
+    return "desconhecido"
+
+
 def extract_bairro(text: str) -> Optional[str]:
     """Extract Sergipe municipality from text. Returns canonical name or None."""
     if not text:

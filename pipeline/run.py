@@ -68,7 +68,7 @@ def main() -> None:
         logger.info("process_raw_records: %d new casos inserted.", inserted)
 
         # 4b. Backfill bairro para casos existentes sem município
-        from nlp import extract_bairro, classify_tipo  # type: ignore
+        from nlp import extract_bairro, classify_tipo, classify_relacao  # type: ignore
 
         # Backfill bairro
         with conn.cursor() as cur:
@@ -99,6 +99,21 @@ def main() -> None:
         if updated_tipo:
             conn.commit()
             logger.info("backfill_tipo: %d casos atualizados.", updated_tipo)
+
+        # Backfill relacao
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, title, body_trecho FROM casos WHERE relacao IS NULL OR relacao = 'desconhecido'")
+            rows = cur.fetchall()
+        updated_relacao = 0
+        for caso_id, title, body in rows:
+            relacao = classify_relacao((title or "") + " " + (body or ""))
+            if relacao != "desconhecido":
+                with conn.cursor() as cur:
+                    cur.execute("UPDATE casos SET relacao = %s WHERE id = %s", (relacao, caso_id))
+                updated_relacao += 1
+        if updated_relacao:
+            conn.commit()
+            logger.info("backfill_relacao: %d casos atualizados.", updated_relacao)
 
         # Agrupamento cross-source: casos com mesma data + mesmo bairro de fontes diferentes
         with conn.cursor() as cur:

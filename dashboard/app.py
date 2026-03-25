@@ -77,7 +77,7 @@ def load_casos() -> pd.DataFrame:
     try:
         conn = _get_connection()
         df = pd.read_sql_query(
-            "SELECT id, published_at, source, title, bairro, url, tipo FROM casos ORDER BY published_at DESC",
+            "SELECT id, published_at, source, title, bairro, url, tipo, relacao FROM casos ORDER BY published_at DESC",
             conn,
         )
         conn.close()
@@ -128,6 +128,8 @@ bairros_disp = sorted(df_all["bairro"].dropna().unique()) if not df_all.empty el
 fonte_sel  = st.sidebar.multiselect("Fonte",  fontes_disp,  default=[])
 bairro_sel = st.sidebar.multiselect("Município", bairros_disp, default=[])
 tipo_sel   = st.sidebar.multiselect("Tipo", ["consumado", "tentativa", "desconhecido"], default=[])
+relacao_opcoes = ["ex-companheiro", "ex-marido", "ex-namorado", "companheiro", "marido", "namorado", "familiar", "conhecido", "desconhecido"]
+relacao_sel = st.sidebar.multiselect("Relação agressor-vítima", relacao_opcoes, default=[])
 
 st.sidebar.markdown("---")
 st.sidebar.caption(
@@ -151,6 +153,8 @@ if fonte_sel:
     df = df[df["source"].isin(fonte_sel)]
 if tipo_sel:
     df = df[df["tipo"].isin(tipo_sel)]
+if relacao_sel:
+    df = df[df["relacao"].isin(relacao_sel)]
 
 # Subset só 2026 para KPIs fixos
 df_2026 = df_all[df_all["published_at"].dt.year == 2026] if not df_all.empty else pd.DataFrame()
@@ -251,6 +255,20 @@ else:
                            color_discrete_sequence=["#c0392b", "#e74c3c", "#f1948a"])
         st.plotly_chart(fig_fonte, use_container_width=True)
 
+    # Gráfico de relação agressor-vítima
+    if "relacao" in df.columns:
+        df_rel = df[df["relacao"] != "desconhecido"]
+        if not df_rel.empty:
+            por_relacao = df_rel.groupby("relacao").size().reset_index(name="total").sort_values("total", ascending=True)
+            fig_rel = px.bar(por_relacao, x="total", y="relacao", orientation="h",
+                             text="total",
+                             labels={"total": "Casos", "relacao": "Relação"},
+                             title="Relação agressor-vítima",
+                             color="total", color_continuous_scale="Reds")
+            fig_rel.update_traces(textposition="outside")
+            fig_rel.update_layout(coloraxis_showscale=False)
+            st.plotly_chart(fig_rel, use_container_width=True)
+
     # Mapa
     df_cidade = df[df["bairro"].notna()].copy()
     if not df_cidade.empty:
@@ -273,7 +291,7 @@ else:
 
     # Tabela
     st.subheader("📋 Incidentes")
-    cols = ["published_at", "bairro", "tipo", "title", "source", "url"]
+    cols = ["published_at", "bairro", "tipo", "relacao", "title", "source", "url"]
     st.dataframe(
         df_inc[[c for c in cols if c in df_inc.columns]].reset_index(drop=True),
         use_container_width=True,
