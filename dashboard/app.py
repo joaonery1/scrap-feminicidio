@@ -77,7 +77,7 @@ def load_casos() -> pd.DataFrame:
     try:
         conn = _get_connection()
         df = pd.read_sql_query(
-            "SELECT id, published_at, source, title, bairro, url FROM casos ORDER BY published_at DESC",
+            "SELECT id, published_at, source, title, bairro, url, tipo FROM casos ORDER BY published_at DESC",
             conn,
         )
         conn.close()
@@ -126,10 +126,15 @@ data_fim    = st.sidebar.date_input("Data fim",    value=default_fim)
 fontes_disp  = sorted(df_all["source"].dropna().unique()) if not df_all.empty else []
 bairros_disp = sorted(df_all["bairro"].dropna().unique()) if not df_all.empty else []
 fonte_sel  = st.sidebar.multiselect("Fonte",  fontes_disp,  default=[])
-bairro_sel = st.sidebar.multiselect("Bairro", bairros_disp, default=[])
+bairro_sel = st.sidebar.multiselect("Município", bairros_disp, default=[])
+tipo_sel   = st.sidebar.multiselect("Tipo", ["consumado", "tentativa", "desconhecido"], default=[])
 
 st.sidebar.markdown("---")
-st.sidebar.caption("Fontes: SSP-SE, G1 Sergipe, Infonet, SE Notícias  \nDados históricos: Anuário FBSP 2025")
+st.sidebar.caption(
+    "Fontes: SSP-SE, G1 Sergipe, Infonet, SE Notícias, "
+    "Instagram (@gordinhodopovose, @dougtvnews)  \n"
+    "Dados históricos: Anuário FBSP 2025"
+)
 
 # ---------------------------------------------------------------------------
 # Apply filters
@@ -144,6 +149,8 @@ if bairro_sel:
     df = df[df["bairro"].isin(bairro_sel)]
 if fonte_sel:
     df = df[df["source"].isin(fonte_sel)]
+if tipo_sel:
+    df = df[df["tipo"].isin(tipo_sel)]
 
 # Subset só 2026 para KPIs fixos
 df_2026 = df_all[df_all["published_at"].dt.year == 2026] if not df_all.empty else pd.DataFrame()
@@ -176,7 +183,7 @@ def deduplicate_incidents(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # KPIs — foco 2026
 # ---------------------------------------------------------------------------
-k1, k2, k3, k4 = st.columns(4)
+k1, k2, k3, k4, k5 = st.columns(5)
 
 incidentes_2026 = count_incidents(df_2026)
 incidentes_mes = count_incidents(df_mes)
@@ -184,6 +191,9 @@ mes_anterior = (datetime.date.today().replace(day=1) - datetime.timedelta(days=1
 df_mes_anterior = df_2026[df_2026["published_at"].dt.month == mes_anterior.month] if not df_2026.empty else pd.DataFrame()
 incidentes_mes_anterior = count_incidents(df_mes_anterior)
 delta_mes = incidentes_mes - incidentes_mes_anterior if incidentes_mes_anterior > 0 else None
+
+consumados_2026 = len(df_2026[df_2026["tipo"] == "consumado"]) if not df_2026.empty and "tipo" in df_2026.columns else 0
+tentativas_2026 = len(df_2026[df_2026["tipo"] == "tentativa"]) if not df_2026.empty and "tipo" in df_2026.columns else 0
 
 k1.metric(
     f"🔴 {datetime.date.today().strftime('%B/%Y')}",
@@ -194,6 +204,10 @@ k1.metric(
 )
 k2.metric("Incidentes em 2026", incidentes_2026,
           help=f"{len(df_2026)} registros coletados, agrupados por data+município")
+k3.metric("🪦 Consumados 2026", consumados_2026,
+          help="Registros classificados como feminicídio consumado")
+k4.metric("⚠️ Tentativas 2026", tentativas_2026,
+          help="Registros classificados como tentativa de feminicídio")
 
 feminicidios_2024 = anuario.get("feminicidios_por_ano", {}).get("2024", "—")
 feminicidios_2023 = anuario.get("feminicidios_por_ano", {}).get("2023", "—")
@@ -201,18 +215,16 @@ delta = None
 if isinstance(feminicidios_2024, int) and isinstance(feminicidios_2023, int):
     delta = feminicidios_2024 - feminicidios_2023
 
-k3.metric("Feminicídios SE — 2024 (ref.)", feminicidios_2024,
+k5.metric("Feminicídios SE — 2024 (ref.)", feminicidios_2024,
           delta=f"{delta:+d} vs 2023" if delta is not None else None,
           delta_color="inverse")
-k4.metric("Tentativas SE — 2024 (ref.)",
-          anuario.get("tentativas_feminicidio", {}).get("2024", "—"))
 
 st.markdown("---")
 
 # ---------------------------------------------------------------------------
 # Seção 1 — Dados 2026 (foco principal)
 # ---------------------------------------------------------------------------
-st.subheader("📰 Casos coletados em 2026 — Sergipe (scrapers SSP-SE + G1)")
+st.subheader("📰 Casos coletados em 2026 — Sergipe")
 
 if df.empty:
     st.info("Nenhum caso encontrado com os filtros selecionados.")
@@ -261,7 +273,7 @@ else:
 
     # Tabela
     st.subheader("📋 Incidentes")
-    cols = ["published_at", "bairro", "title", "source", "url"]
+    cols = ["published_at", "bairro", "tipo", "title", "source", "url"]
     st.dataframe(
         df_inc[[c for c in cols if c in df_inc.columns]].reset_index(drop=True),
         use_container_width=True,
