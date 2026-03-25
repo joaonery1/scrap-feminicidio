@@ -20,12 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug secrets
-        run: |
-          echo "POSTGRES_HOST set: ${{ secrets.POSTGRES_HOST != '' }}"
-          echo "POSTGRES_PORT set: ${{ secrets.POSTGRES_PORT != '' }}"
-          echo "POSTGRES_USER set: ${{ secrets.POSTGRES_USER != '' }}"
-
       # — Scrapers Go (SSP-SE, G1, Instagram, dados.gov.br) —
       - uses: actions/setup-go@v5
         with:
