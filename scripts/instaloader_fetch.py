@@ -97,10 +97,24 @@ def make_session(session_id: str) -> requests.Session:
     return s
 
 
+def _get_with_retry(session: requests.Session, url: str, params=None, max_retries: int = 3) -> requests.Response:
+    """GET com retry exponencial em caso de 429."""
+    for attempt in range(max_retries):
+        r = session.get(url, params=params, timeout=15)
+        if r.status_code == 429:
+            wait = 30 * (2 ** attempt)  # 30s, 60s, 120s
+            print(f"429 em {url} — aguardando {wait}s (tentativa {attempt+1}/{max_retries})", file=sys.stderr)
+            time.sleep(wait)
+            continue
+        r.raise_for_status()
+        return r
+    r.raise_for_status()
+    return r
+
+
 def get_user_id(session: requests.Session, username: str) -> str:
     url = f"https://i.instagram.com/api/v1/users/web_profile_info/?username={username}"
-    r = session.get(url, timeout=15)
-    r.raise_for_status()
+    r = _get_with_retry(session, url)
     data = r.json()
     user = data.get("data", {}).get("user", {})
     user_id = user.get("id")
@@ -119,8 +133,7 @@ def get_posts(session: requests.Session, user_id: str, max_posts: int):
         if next_max_id:
             params["max_id"] = next_max_id
 
-        r = session.get(url, params=params, timeout=15)
-        r.raise_for_status()
+        r = _get_with_retry(session, url, params=params)
         data = r.json()
 
         items = data.get("items", [])
@@ -135,7 +148,7 @@ def get_posts(session: requests.Session, user_id: str, max_posts: int):
         if not next_max_id:
             break
 
-        time.sleep(1)
+        time.sleep(3)
 
     return posts[:max_posts]
 
