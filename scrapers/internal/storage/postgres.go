@@ -26,22 +26,20 @@ func New(ctx context.Context, dsn string) (*DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("pgxpool.ParseConfig: %w", err)
 	}
-	cfg.ConnConfig.DialFunc = func(ctx context.Context, network, addr string) (net.Conn, error) {
-		host, port, err := net.SplitHostPort(addr)
-		if err != nil {
-			return nil, err
-		}
-		addrs, err := net.DefaultResolver.LookupHost(ctx, host)
-		if err != nil {
-			return nil, err
-		}
-		for _, a := range addrs {
-			if ip := net.ParseIP(a); ip != nil && ip.To4() != nil {
-				return (&net.Dialer{}).DialContext(ctx, "tcp4", net.JoinHostPort(a, port))
-			}
-		}
-		return nil, fmt.Errorf("no IPv4 address found for %s", host)
+
+	// Resolve hostname to IPv4 to avoid IPv6 issues on GitHub Actions runners.
+	host := cfg.ConnConfig.Host
+	addrs, err := net.DefaultResolver.LookupHost(ctx, host)
+	if err != nil {
+		return nil, fmt.Errorf("dns lookup %s: %w", host, err)
 	}
+	for _, a := range addrs {
+		if ip := net.ParseIP(a); ip != nil && ip.To4() != nil {
+			cfg.ConnConfig.Host = a
+			break
+		}
+	}
+
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("pgxpool.New: %w", err)
