@@ -72,7 +72,7 @@ def _get_connection():
     )
 
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=300)
 def load_casos() -> pd.DataFrame:
     try:
         conn = _get_connection()
@@ -180,10 +180,20 @@ k1, k2, k3, k4 = st.columns(4)
 
 incidentes_2026 = count_incidents(df_2026)
 incidentes_mes = count_incidents(df_mes)
+mes_anterior = (datetime.date.today().replace(day=1) - datetime.timedelta(days=1))
+df_mes_anterior = df_2026[df_2026["published_at"].dt.month == mes_anterior.month] if not df_2026.empty else pd.DataFrame()
+incidentes_mes_anterior = count_incidents(df_mes_anterior)
+delta_mes = incidentes_mes - incidentes_mes_anterior if incidentes_mes_anterior > 0 else None
 
-k1.metric("Incidentes em 2026", incidentes_2026,
+k1.metric(
+    f"🔴 {datetime.date.today().strftime('%B/%Y')}",
+    incidentes_mes,
+    delta=f"{delta_mes:+d} vs mês anterior" if delta_mes is not None else None,
+    delta_color="inverse",
+    help="Incidentes únicos no mês atual",
+)
+k2.metric("Incidentes em 2026", incidentes_2026,
           help=f"{len(df_2026)} registros coletados, agrupados por data+município")
-k2.metric(f"Incidentes em {datetime.date.today().strftime('%B/%Y')}", incidentes_mes)
 
 feminicidios_2024 = anuario.get("feminicidios_por_ano", {}).get("2024", "—")
 feminicidios_2023 = anuario.get("feminicidios_por_ano", {}).get("2023", "—")
